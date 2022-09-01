@@ -43,6 +43,13 @@ log() {
 		echo -e "[${get_time}] -- $1" >> $log_file
 	fi
 }
+#判断jq是否存在
+check_jq(){
+	if [ ! -f $jq_path ]; then
+		echo "jq文件不存在，请检查!!!"
+		exit 1
+	fi
+}
 #获取本机IP
 get_ip() {
 	log "正在获取本机IP..."
@@ -115,6 +122,8 @@ update_dns(){
 ###################  脚本主体  ###################
 echo "#############################" >> ${log_file}
 log "ddns脚本开始启动"
+#检查jq文件
+check_jq
 #获取本机IP地址
 get_ip
 #判断是否成功获取到IP
