@@ -2,16 +2,20 @@
 ##############  用户配置（修改这里） ###############
 #
 #dnspod token id
-#login_id="338530"
-login_id="338530"
+#login_id=""
+login_id=""
 #dnspod token value
-login_token="5597a520c0663824c98f534440310198"
+login_token=""
 #域名ID
-domain_id="92349175"
+domain_id=""
 #主机记录。如:www,@
-sub_domain="v6"
+sub_domain="@"
 #记录类型
 record_type="AAAA"
+#记录数组index
+record_num="2"
+#jq路径
+jq_path="./jq"
 
 #################  脚本配置  ######################
 #
@@ -71,7 +75,7 @@ get_domain_info(){
 
 	curl -s -X POST 'https://dnsapi.cn/Record.List' -d 'login_token='${login_id}','${login_token}'&format=json&domain_id='${domain_id}'' > ${domain_file}
 	domain_info=$(cat ${domain_file})
-	code=$(./jq "./result.json" "status.code")
+	code=$(${jq_path} "${domain_file}" "status.code")
 	if [ ${code} -ne 1 ]; then
 		echo "状态码不等于1,获取域名信息失败,请检查!!!"
 		echo -e "${domain_info}"
@@ -82,22 +86,23 @@ get_domain_info(){
 get_record_info(){
 	log "正在获取记录信息..."
 	#记录ID
-	record_id=$(./jq "./result.json" "records.2.id")
+	record_id=$(${jq_path} "${domain_file}" "records.${record_num}.id")
 	#记录线路ID
-	record_line_id=$(./jq "./result.json" "records.2.line_id")
+	record_line_id=$(${jq_path} "${domain_file}" "records.${record_num}.line_id")
 }
 
 update_dns(){
 	log "正在更新dns记录..."
 	res=$(curl -s -X POST https://dnsapi.cn/Record.Modify -d 'login_token='${login_id}','${login_token}'&format=json&domain_id='${domain_id}'&record_id='${record_id}'&sub_domain='${sub_domain}'&value='${new_ip}'&record_type='${record_type}'&record_line_id='${record_line_id}'')
+	#echo "https://dnsapi.cn/Record.Modify -d 'login_token='${login_id}','${login_token}'&format=json&domain_id='${domain_id}'&record_id='${record_id}'&sub_domain='${sub_domain}'&value='${new_ip}'&record_type='${record_type}'&record_line_id='${record_line_id}''"
 	echo -e ${res} > ./res.json
-	res_code=$(./jq "./res.json" "status.code")
+	res_code=$(${jq_path} "./res.json" "status.code")
 	if [ ${res_code} -ne 1 ]; then
 		echo "状态码不等于1,更新记录失败,请检查!!!"
 		log "状态码不等于1,更新记录失败,请检查!!!"
 		echo -e "${res}"
 		log -e "${res}"
-		
+
 		rm ./res.json
 		exit 1
 	else
